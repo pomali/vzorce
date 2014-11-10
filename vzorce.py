@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
+# Author: Stanislav Parnicky
+# Created: 10-11-2014
 import operator
 import itertools 
 import math
-
 
 
 class T:
@@ -43,7 +44,12 @@ class K(object):
 class Operation(K):
     final_N = None
     def __str__(self):
-        return  "(%s)"% self.S.join(map(str,self.args))
+        def arg_par(x):
+            if isinstance(x,Operation):
+                return "(%s)" % str(x)
+            return str(x)
+        return  self.S.join(map(arg_par,self.args))
+
     def __init__(self, args):
         self.args = args
 
@@ -71,12 +77,22 @@ class Operation(K):
         out_str = "\n".join(buf)
         return out_str
 
+class SingleArgOperation(Operation):
+    pass
+
+class CmpOperation(Operation):
+    def __str__(self):
+        return  self.S.join(map(str,self.args))
 
 class AssociativeOperation(Operation):
-   # def __str__(self):
-   #     if all(map(lambda o: isinstance(o, self.__class__), self.args)):
-   #         return "%s" % self.S.join(map(str, self.args))
-   #     return  "(%s)"% self.S.join(map(str,self.args))
+    def __str__(self):
+        def arg_par(x):
+            if (isinstance(x,Operation) 
+                and not isinstance(x, self.__class__) 
+                and not isinstance(x,SingleArgOperation)):
+                return "(%s)" % str(x)
+            return str(x)
+        return  self.S.join(map(arg_par,self.args))
     pass
 
 class OpMul(AssociativeOperation):
@@ -102,7 +118,7 @@ class OpMul(AssociativeOperation):
 class OpAdd(AssociativeOperation):
     S = " + "
     def evaluate(self):
-        return N( self.args[0].value + self.args[1].value)
+        return N( self.args[0].evaluate() + self.args[1].evaluate())
 
 class OpSub(Operation):
     S = " - "
@@ -119,12 +135,13 @@ class OpSub(Operation):
             else:
                 return N( list(itertools.starmap(operator.sub, zip(x.value, y.value) ) ) )
 
-class OpLt(Operation):
+
+class OpLt(CmpOperation):
     S = " < "
     def evaluate(self):
         return N(self.args[0].value < self.args[1].value)
 
-class OpGt(Operation):
+class OpGt(CmpOperation):
     S = " > "
     def evaluate(self):
         return N(self.args[0].value > self.args[1].value)
@@ -151,7 +168,7 @@ class OpPow(Operation):
 #        y = self.args[1].evaluate()
 #        return 
 
-class OpAbs(Operation):
+class OpAbs(SingleArgOperation):
     def __str__(self):
         return "|%s|" % str(self.args)
 
@@ -172,6 +189,8 @@ class N(K): #number/value
     def __str__(self):
         if isinstance(self.value, bool):
             return "\\text{Platí}" if  self.value else "\\text{Neplatí}"
+        if (isinstance(self.value, int) or isinstance(self.value, float)) and self.value<0:
+            return "(%s)" % str(self.value)
         return str(self.value)
     def calculate(self):
         return N(self.value)
