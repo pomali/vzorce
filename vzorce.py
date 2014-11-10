@@ -5,12 +5,13 @@ import operator
 import itertools 
 import math
 
-
 class T:
     pass
 
+
 class N:
     pass
+
 
 class K(object):
     def __repr__(self):
@@ -41,6 +42,7 @@ class K(object):
                     "%s\n"
                     "\\end{polynomial}\n") % (str(self))
 
+
 class Operation(K):
     final_N = None
     def __str__(self):
@@ -54,46 +56,51 @@ class Operation(K):
         self.args = args
 
     def calculate(self):
+        """Vykona vsetky operacie ktore maju ako argumenty iba listy (a nahradi ich listami s vysledkom)
+        """
         if all( map( lambda x: isinstance(x, N),self.args) ):
             return self.evaluate()
         else:
-            #return self.__class__( map(operator.methodcaller('calculate'), self.args))
-            return self.__class__( (self.args[0].calculate(), self.args[1].calculate()) )
-
+            return self.__class__( map(operator.methodcaller('calculate'), self.args))
+            #return self.__class__( (self.args[0].calculate(), self.args[1].calculate()) )
 
     def duri(self, prepend = None):
+        """Vrati TeX source vypoctu stromu operacii
+        """
         buf = []
         X = self
         while True:
             buf.append(X.tex(prepend))
-            #print(X, X.__class__, X.args)
             X = X.calculate()
             if not isinstance(X, Operation):
                 break
-        #print(X, X.__class__, X.value)
-        #print(X.value)
         self.final_N = X.value
         buf.append(X.tex(prepend))
         out_str = "\n".join(buf)
         return out_str
 
+
 class SingleArgOperation(Operation):
     pass
+
 
 class CmpOperation(Operation):
     def __str__(self):
         return  self.S.join(map(str,self.args))
 
+
 class AssociativeOperation(Operation):
     def __str__(self):
         def arg_par(x):
+            """Vsetky rovnake operacie neozatvorkuje inak ozatvorkuje
+            """
             if (isinstance(x,Operation) 
                 and not isinstance(x, self.__class__) 
                 and not isinstance(x,SingleArgOperation)):
                 return "(%s)" % str(x)
             return str(x)
         return  self.S.join(map(arg_par,self.args))
-    pass
+
 
 class OpMul(AssociativeOperation):
     S = " * "
@@ -115,10 +122,12 @@ class OpMul(AssociativeOperation):
         else:
             return N( map( lambda i: i*y.evaluate(), x.evaluate()))
 
+
 class OpAdd(AssociativeOperation):
     S = " + "
     def evaluate(self):
         return N( self.args[0].evaluate() + self.args[1].evaluate())
+
 
 class OpSub(Operation):
     S = " - "
@@ -141,10 +150,12 @@ class OpLt(CmpOperation):
     def evaluate(self):
         return N(self.args[0].value < self.args[1].value)
 
+
 class OpGt(CmpOperation):
     S = " > "
     def evaluate(self):
         return N(self.args[0].value > self.args[1].value)
+
 
 class OpDot(Operation):
     S = " \\cdot "
@@ -153,6 +164,7 @@ class OpDot(Operation):
         y = self.args[1].evaluate()
         return (N(x[0]) * N(y[0])) + (N(x[1]) * N(y[1])) + (N(x[2]) * N(y[2]))
 
+
 class OpPow(Operation):
     S = "^"
     def evaluate(self):
@@ -160,13 +172,6 @@ class OpPow(Operation):
         y = self.args[1].evaluate()
         return N(x)**N(y)
 
-
-#class OpCross(Operation):
-#    S = " \\times "
-#    def evaluate(self):
-#        x = self.args[0].evaluate()
-#        y = self.args[1].evaluate()
-#        return 
 
 class OpAbs(SingleArgOperation):
     def __str__(self):
@@ -182,41 +187,56 @@ class OpAbs(SingleArgOperation):
            return OpAbs(self.args.calculate())
 
 
-
 class N(K): #number/value
+    """Class zachytavajuci konkretne cislo, hodnotu, maticu a podobne
+    """
     def __init__(self, value):
         self.value = value
+
     def __str__(self):
         if isinstance(self.value, bool):
             return "\\text{Platí}" if  self.value else "\\text{Neplatí}"
         if (isinstance(self.value, int) or isinstance(self.value, float)) and self.value<0:
             return "(%s)" % str(self.value)
         return str(self.value)
+
     def calculate(self):
         return N(self.value)
+
     def evaluate(self):
         return self.value
+
     def __getitem__(self, key):
         return N(self.value[key])
+
     @property
     def is_scalar(self):
         return not isinstance(self.value, list)
 
+
 class T(K): #Term
+    """Class zachytavajuci hodnotu s menom, 
+        ktora sa da pouzit pri vypoctoch a po vypisani vzorcu bude dosadena
+    """
     def __init__(self, value, name=None):
         self.value = value
         self.name = name
+
     def __str__(self):
         if self.name:
             return self.name
         return str(self.value)
+
     def calculate(self):
         return N(self.value) 
+
     def evaluate(self):
         return self.value
+
     def __getitem__(self, key):
         keyname = ['x','y','z'][key]
         return T(self.value[key], "{%s}_{%s}" % (self.name,keyname))
+
     @property
     def is_scalar(self):
         return not isinstance(self.value, list)

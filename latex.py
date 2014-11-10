@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
 
+"""Skript na TeXovanie vypoctov ktore sa nechce nikomu pisati
+    Author: Stanislav Parnicky
+    Usage: import tx and save_pdf to file with homework     
+        use tx(TeXsourcecode) to append to buffer and save_pdf(filename) to save it to file in cwd
+"""
+
 tex_start = '''\\documentclass[8pt, oneside]{extarticle}         
 \\usepackage[a4paper, margin=1in]{geometry}                     
 \\usepackage[slovak]{babel}
@@ -83,9 +89,11 @@ def generate_pdf(pdfname,title,tex):
 
 out = []
 def tx(tex):
+    """Vstupna funkcia ktora vklada do buffera"""
     out.append(tex)
 
 
-def save_pdf(pdfname, title):
+def save_pdf(pdfname, title="Domáca úloha"):
+    """Ulozi pdf z texu do suboru pdfname"""
     tex = "\n\n".join(out)
     generate_pdf(pdfname,title,tex)
