@@ -73,10 +73,11 @@ class Operation(K):
 
 
 class AssociativeOperation(Operation):
-    def __str__(self):
-        if all(map(lambda o: isinstance(o, self.__class__), self.args)):
-            return "%s" % self.S.join(map(str, self.args))
-        return  "(%s)"% self.S.join(map(str,self.args))
+   # def __str__(self):
+   #     if all(map(lambda o: isinstance(o, self.__class__), self.args)):
+   #         return "%s" % self.S.join(map(str, self.args))
+   #     return  "(%s)"% self.S.join(map(str,self.args))
+    pass
 
 class OpMul(AssociativeOperation):
     S = " * "
